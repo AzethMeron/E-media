@@ -1,0 +1,36 @@
+D:\E_media\PNGapp\bin\Debug\netcoreapp2.1\PNGapp.deps.json
+D:\E_media\PNGapp\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.json
+D:\E_media\PNGapp\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.dev.json
+D:\E_media\PNGapp\bin\Debug\netcoreapp2.1\PNGapp.dll
+D:\E_media\PNGapp\bin\Debug\netcoreapp2.1\PNGapp.pdb
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.csprojAssemblyReference.cache
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.csproj.CoreCompileInputs.cache
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfoInputs.cache
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfo.cs
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.dll
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.pdb
+D:\E_media\PNGapp\obj\Debug\netcoreapp2.1\PNGapp.genruntimeconfig.cache
+D:\E_media\PNGapp — kopia\bin\Debug\netcoreapp2.1\PNGapp.deps.json
+D:\E_media\PNGapp — kopia\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.json
+D:\E_media\PNGapp — kopia\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.dev.json
+D:\E_media\PNGapp — kopia\bin\Debug\netcoreapp2.1\PNGapp.dll
+D:\E_media\PNGapp — kopia\bin\Debug\netcoreapp2.1\PNGapp.pdb
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.csprojAssemblyReference.cache
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.csproj.CoreCompileInputs.cache
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfoInputs.cache
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfo.cs
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.dll
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.pdb
+D:\E_media\PNGapp — kopia\obj\Debug\netcoreapp2.1\PNGapp.genruntimeconfig.cache
+D:\E_media\PNGapp _ kopia\bin\Debug\netcoreapp2.1\PNGapp.deps.json
+D:\E_media\PNGapp _ kopia\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.json
+D:\E_media\PNGapp _ kopia\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.dev.json
+D:\E_media\PNGapp _ kopia\bin\Debug\netcoreapp2.1\PNGapp.dll
+D:\E_media\PNGapp _ kopia\bin\Debug\netcoreapp2.1\PNGapp.pdb
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.csprojAssemblyReference.cache
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfoInputs.cache
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfo.cs
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.dll
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.pdb
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.genruntimeconfig.cache
+D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.csproj.CoreCompileInputs.cache

@@ -2,6 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
+using System.Numerics;
+using AForge.Imaging;
+using System.Drawing;
+using System.Numerics;
+using Accord.Math;
+using MathNet.Numerics.IntegralTransforms;
+using Accord.Imaging.Converters;
 using System.IO.Compression;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
@@ -180,6 +188,9 @@ namespace PNG_WindowAPP
         public Text tEXt { get; set; }
         public List<Text> zTXt { get; set; }
         public Time tIME { get; set; }
+        public int hIST { get; set; }
+        public int sPLT { get; set; }
+        public int eXIf { get; set; }
         public Metadane() { }
     }
 
@@ -203,26 +214,20 @@ namespace PNG_WindowAPP
         public const string tRNS = "74-52-4E-53";
         public const string zTXt = "7A-54-58-74";
         public const string tIME = "74-49-4D-45";
+        public const string sPLT = "73-50-4C-54";
+        public const string hIST = "68-49-53-54";
     }
    
 
     class Program
     {
+        
         static void Main(string[] args)
         {
             Menu();
+          
         }
-        /*public static byte[] Decompress(byte[] data)
-        {
-            MemoryStream input = new MemoryStream(data);
-            MemoryStream output = new MemoryStream();
-            using (DeflateStream dstream = new DeflateStream(input, CompressionMode.Decompress))
-            {
-                dstream.CopyTo(output);
-            }
-            return output.ToArray();
-        }*/
-        
+
     static Metadane Parser(PNG png)
         {
             Metadane info = new Metadane();
@@ -289,79 +294,8 @@ namespace PNG_WindowAPP
                 }
                 else if (analizowany_typ == Constans.IDAT)
                 {
-                    // * * * C B D * * *
-                    // * * * A X * * * *
-                    
-                    //Filter method: 0 "none"
-                    if (info.IHDR.Filter_method == 0)
-                    {
-                        info.IDAT = dane_z_obrazu;
-                    }
-
-                    //Filter method: 1 "sub" (Byte A "to the left")
-                    if (info.IHDR.Filter_method == 1)
-                    {
-                        byte[] tmp = new byte[dane_z_obrazu.Length];
-                        for (int x = 0; x < dane_z_obrazu.Length; x++)
-                        {
-                            if (x % 16 != 0) tmp[x] = (byte)(dane_z_obrazu[x] - dane_z_obrazu[x - 1]);
-                            else tmp[x] = dane_z_obrazu[x];
-                        }
-
-                        info.IDAT = tmp;
-                    }
-
-                    //Filter method: 2 "up" (Byte B "above")
-                    if (info.IHDR.Filter_method == 2)
-                    {
-                        byte[] tmp = new byte[dane_z_obrazu.Length];
-                        for (int x = 0; x < 16; x++)
-                        {
-                            tmp[x] = dane_z_obrazu[x];
-                        }
-                        for (int y = 16; y < dane_z_obrazu.Length; y++)
-                        {
-                            tmp[y] = (byte)(dane_z_obrazu[y] - dane_z_obrazu[y - 16]);
-                        }
-                        info.IDAT = tmp;
-                    }
-
-                    //Filter method: 3 "average" (Mean of bytes A and B, rounded down)
-                    if (info.IHDR.Filter_method == 3)
-                    {
-                        byte[] tmp = new byte[dane_z_obrazu.Length];
-                        for (int x = 0; x < 16; x++)
-                        {
-                            tmp[x] = dane_z_obrazu[x];
-                        }
-                        for (int y = 16; y < dane_z_obrazu.Length; y++)
-                        {
-                            if (y % 16 != 0) tmp[y] = (byte)(dane_z_obrazu[y] - ((dane_z_obrazu[y - 1] + dane_z_obrazu[y - 16]) / 2));
-                            else tmp[y] = dane_z_obrazu[y];
-                        }
-                        info.IDAT = tmp;
-                    }
-
-                    //Filter method: 4 "Paeth" (A, B, or C, whichever is closest to p = A + B − C)
-                    if (info.IHDR.Filter_method == 4)
-                    {
-                        byte[] tmp = new byte[dane_z_obrazu.Length];
-                        for (int x = 0; x < 16; x++)
-                        {
-                            tmp[x] = dane_z_obrazu[x];
-                        }
-                        for (int y = 16; y < dane_z_obrazu.Length; y++)
-                        {
-                            if (y % 16 != 0)
-                            {
-                                byte paeth = Paeth(dane_z_obrazu[y - 1], dane_z_obrazu[y - 16], dane_z_obrazu[y - 17]);
-                                tmp[y] = (byte)(dane_z_obrazu[y] - paeth);
-                            }
-                            else tmp[y] = dane_z_obrazu[y];
-                        }
-                        info.IDAT = tmp;
-
-                    }
+                  
+                    info.IDAT = dane_z_obrazu;
                 }
                 else if (analizowany_typ == Constans.IEND)
                 {
@@ -369,7 +303,7 @@ namespace PNG_WindowAPP
                 }
                 else if (analizowany_typ == Constans.eXIf)
                 {
-
+                    info.eXIf = dane_z_obrazu.Length;
                 }
                 else if (analizowany_typ == Constans.pHYs)
                 {
@@ -555,6 +489,7 @@ namespace PNG_WindowAPP
 
                 else if (analizowany_typ == Constans.iTXt)
                 {
+                    
                     byte[] keyword = new byte[78];
                     string key;
                     int pos = 0;
@@ -747,61 +682,62 @@ namespace PNG_WindowAPP
                     List<Text> te = new List<Text>();
                     List<int> index = new List<int>();
                     string[] original = new string[] { "Title", "Author", "Description", "Copyright", "Creation Time", "Software", "Disclaimer", "Warning", "Source", "Comment" };
+                    //string s1 = Encoding.Default.GetString(dane_z_obrazu);
+                    char[] characters = dane_z_obrazu.Select(b => (char)b).ToArray();
+                    string s1 = new string(characters);
                     foreach (string s in original)
                     {
-                        if (Encoding.Default.GetString(dane_z_obrazu).Contains(s))
+                        if (s1.Contains(s))
                         {
-                            index.Add(Encoding.Default.GetString(dane_z_obrazu).IndexOf(s));
+                            index.Add(s1.IndexOf(s));
                         }
                     }
+                   
+                    
                     index.Sort();
                     int m = 0;
                     if (index.Count == 1)
                     {
-                     
-                            byte[] key_tab = new byte[78];
-                            int pos = 0;
-                            while (dane_z_obrazu[pos] != 0)
-                            {
-                                key_tab[pos] = dane_z_obrazu[pos];
-                                pos++;
-                            }
-                            if (pos < 78) Array.Resize(ref key_tab, pos);
-                            string keyword = Encoding.Default.GetString(key_tab);
+
+                        byte[] key_tab = new byte[78];
+                        int pos = 0;
+                        while (dane_z_obrazu[pos] != 0)
+                        {
+                            key_tab[pos] = dane_z_obrazu[pos];
                             pos++;
-                            byte compressionMethod = dane_z_obrazu[pos];
-                            pos++;
-                            byte[] text_tab = new byte[dane_z_obrazu.Length];
-                            int pos_text = 0;
-                            while (pos != dane_z_obrazu.Length)
-                            {
-                                text_tab[pos_text] = dane_z_obrazu[pos];
-                                pos++; pos_text++;
-                            }
-                            Console.WriteLine(pos);
-                            if (pos_text < dane_z_obrazu.Length) Array.Resize(ref text_tab, pos_text);
-                            //if (BitConverter.IsLittleEndian) Array.Reverse(text_tab);
-                            var uncompressed = Ionic.Zlib.ZlibStream.UncompressBuffer(text_tab);
-                            string text = Encoding.Default.GetString(uncompressed);
-                            Text ztxt = new Text { Keyword = keyword, CompressionMethod = compressionMethod, _Text = text };
-                            te.Add(ztxt);
-                            info.zTXt = te;
                         }
+                        if (pos < 78) Array.Resize(ref key_tab, pos);
+                        string keyword = Encoding.Default.GetString(key_tab);
+                        pos++;
+                        byte compressionMethod = dane_z_obrazu[pos];
+                        pos++;
+                        byte[] text_tab = new byte[dane_z_obrazu.Length];
+                        int pos_text = 0;
+                        while (pos != dane_z_obrazu.Length)
+                        {
+                            text_tab[pos_text] = dane_z_obrazu[pos];
+                            pos++; pos_text++;
+                        }
+                        if (pos_text < dane_z_obrazu.Length) Array.Resize(ref text_tab, pos_text);
+                        var uncompressed = Ionic.Zlib.ZlibStream.UncompressBuffer(text_tab);
+                        string text = Encoding.Default.GetString(uncompressed);
+                        Text ztxt = new Text { Keyword = keyword, CompressionMethod = compressionMethod, _Text = text };
+                        te.Add(ztxt);
+                        info.zTXt = te;
+                    }
                     else if (index.Count > 1)
                     {
-                        Console.WriteLine("leng: "+dane_z_obrazu.Length);
-                        m = 1;int pos = 0;
-                        while (pos !=dane_z_obrazu.Length)
+                        m = 1; int pos = 0;
+                        while (pos != dane_z_obrazu.Length)
                         {
                             byte[] key_tab = new byte[78];
-                            
+                            int pos_key=0;
                             while (dane_z_obrazu[pos] != 0)
                             {
-                                Console.WriteLine("pos key: " + pos);
-                                //key_tab[pos] = dane_z_obrazu[pos];
-                                pos++;
+                                key_tab[pos_key] = dane_z_obrazu[pos];
+                                pos++;pos_key++;
                             }
-                            if (pos < 78) Array.Resize(ref key_tab, pos);
+                            if (pos_key < 78) Array.Resize(ref key_tab, pos_key);
                             string keyword = Encoding.Default.GetString(key_tab);
                             pos++;
                             byte compressionMethod = dane_z_obrazu[pos];
@@ -810,36 +746,30 @@ namespace PNG_WindowAPP
                             int pos_text = 0;
                             if (m < index.Count)
                             {
-                            while (pos != index[m])
-                            {
-                                Console.WriteLine("pos text: " + pos);
-                                text_tab[pos_text] = dane_z_obrazu[pos];
-                                pos++; pos_text++;
-                            }
-                            }else if (m == index.Count)
-                            {
-                                while (pos != dane_z_obrazu.Length)
+                                while (pos <= index[m]-1)
                                 {
-                                    Console.WriteLine("pos text: " + pos);
                                     text_tab[pos_text] = dane_z_obrazu[pos];
                                     pos++; pos_text++;
                                 }
+                                m++;
                             }
-                            
-                           
-                            //pos = index[m];
-                            pos = pos + key_tab.Length+2;
+                            else if (m == index.Count)
+                            {
+                               while (pos != dane_z_obrazu.Length)
+                               {
+                                    text_tab[pos_text] = dane_z_obrazu[pos];
+                                    pos++; pos_text++;
+                               }
+                            }
                             if (pos_text < dane_z_obrazu.Length) Array.Resize(ref text_tab, pos_text);
-                            //if (BitConverter.IsLittleEndian) Array.Reverse(text_tab);
                             var uncompressed = Ionic.Zlib.ZlibStream.UncompressBuffer(text_tab);
                             string text = Encoding.Default.GetString(uncompressed);
                             Text ztxt = new Text { Keyword = keyword, CompressionMethod = compressionMethod, _Text = text };
                             te.Add(ztxt);
-                            m++;
-                        }info.zTXt = te;
-                    }
-                    
-                    
+                            
+                            }
+                        info.zTXt = te;
+                    }                                        
                 }
 
                 if(analizowany_typ == Constans.tIME)
@@ -855,6 +785,16 @@ namespace PNG_WindowAPP
                     Time time = new Time { Year = year, Month = month, Day = day, Hour = hour, Minute = minute, Second = second };
                     info.tIME = time;
                 }
+
+                if (analizowany_typ == Constans.sPLT)
+                {
+                    info.sPLT = dane_z_obrazu.Length;
+                }
+
+                if (analizowany_typ == Constans.hIST)
+                {
+                    info.hIST = dane_z_obrazu.Length;
+                }
             }
             return info;
         }
@@ -868,7 +808,11 @@ namespace PNG_WindowAPP
             }
             return false;
         }
-        
+
+
+        /*********************************************************************************************************************************************/
+        /*                                                      FUNKCJA ŁĄCZĄCA CHUNKI                                                               */
+        /********************************************************************************************************************************************/        
         static PNG Joint(PNG wczytany)
         {
             // Zmienne do których zbieramy zawartości typów, które łączymy
@@ -887,11 +831,18 @@ namespace PNG_WindowAPP
             zTXt.type = new byte[0];
             zTXt.crc = new byte[0];
             zTXt.data = new byte[0];
+            Chunk iTXt = new Chunk();
+            iTXt.length = new byte[0];
+            iTXt.type = new byte[0];
+            iTXt.crc = new byte[0];
+            iTXt.data = new byte[0];
             int indIDAT = -1;
             int indTEXT = -1;
             int indZTXT = -1;
+            int indITXT = -1;
             int textExist = 0;
             int ztextExist = 0;
+            int itextExist = 0;
 
             // Pętla główna
             for (int i = 0; i < wczytany.zawartosc.Count; i++)
@@ -944,6 +895,21 @@ namespace PNG_WindowAPP
                     wczytany.zawartosc.Remove(wczytany.zawartosc[i]);
                     i--;
                     ztextExist = 1;
+                }
+
+                if (sygn == Constans.iTXt)
+                {
+                    if (indITXT == -1) indITXT = i;
+                    // Kopiowanie typu, bo tak łatwiej to zrobić
+                    iTXt.type = wczytany.zawartosc[i].type;
+                    // Kopiowanie zawartości
+                    int rozmiarPierwotny = iTXt.data.Length;
+                    int rozmiarZnalezionego = wczytany.zawartosc[i].data.Length;
+                    Array.Resize(ref iTXt.data, rozmiarPierwotny + rozmiarZnalezionego);
+                    Array.Copy(wczytany.zawartosc[i].data, 0, iTXt.data, rozmiarPierwotny, rozmiarZnalezionego);
+                    wczytany.zawartosc.Remove(wczytany.zawartosc[i]);
+                    i--;
+                    itextExist = 1;
                 }
             }
 
@@ -999,6 +965,23 @@ namespace PNG_WindowAPP
                 wczytany.zawartosc.Insert(indZTXT, zTXt);
             }
 
+            if (itextExist == 1)
+            {
+                iTXt.crc = new byte[4];
+                iTXt.length = new byte[4];
+                byte[] temp1 = BitConverter.GetBytes(iTXt.data.Length);
+                if (BitConverter.IsLittleEndian) Array.Reverse(temp1);
+                Array.Resize(ref temp1, 4);
+                Array.Copy(temp1, 0, iTXt.length, 0, 4);
+                byte[] crc_temp1 = new byte[iTXt.data.Length + iTXt.type.Length];
+                Array.Copy(iTXt.type, 0, crc_temp1, 0, 4);
+                Array.Copy(iTXt.data, 0, crc_temp1, 4, iTXt.data.Length);
+                Crc32 crc1 = new Crc32();
+                byte[] Crc1 = crc1.ComputeChecksumBytes(crc_temp1);
+                Array.Copy(Crc1, 0, iTXt.crc, 0, 4);
+                wczytany.zawartosc.Insert(indITXT, iTXt);
+            }
+
 
             return wczytany;
         }
@@ -1046,6 +1029,8 @@ namespace PNG_WindowAPP
                 baza_typów.Add(Constans.tRNS); // tRNS
                 baza_typów.Add(Constans.tIME); // tIME
                 baza_typów.Add(Constans.zTXt); // zTXt
+                baza_typów.Add(Constans.sPLT); // sPLT
+                baza_typów.Add(Constans.hIST); // hIST
 
                 // Parser metadanych
                 for (int i = 8; i < plik.Length - 3; i++)
@@ -1137,6 +1122,82 @@ namespace PNG_WindowAPP
             }
         }
 
+        public class FFT
+        {
+            public Bitmap AbsToBitmap(Complex[,] comp, double corrected_width, double corrected_height)
+            {
+                Bitmap bitmap = new Bitmap((int)corrected_width,(int)corrected_height);
+                Console.WriteLine("cor h: " + corrected_height);
+                Console.WriteLine("cor w: " + corrected_width);
+                for(int i=0; i < corrected_width; i++)
+                {
+                    for(int k = 0; k < corrected_height; k++)
+                    {
+                        double temp = Complex.Abs(comp[i,k]);
+                        bitmap.SetPixel(k,i , System.Drawing.Color.FromArgb(255, (int)temp, (int)temp, (int)temp));                        
+                    }
+                }
+                return bitmap;
+            }
+            public Complex[,] Truncate(Bitmap bitmap,double corrected_width, double corrected_height)
+            {
+                
+                Complex[,] tab = new Complex[(int)(corrected_width),(int)(corrected_height)];
+                for(int i=0; i< corrected_width; i++)
+                { 
+                    for(int k=0; k < corrected_height; k++)
+                    {
+                        tab[i,k] = 0;
+                        if (i < bitmap.Width)
+                        {
+                            if (k < bitmap.Height)
+                            {
+                                var pixel = bitmap.GetPixel(k,i);
+                                tab[i,k] = pixel.R;
+                            }
+                        }                       
+                    }                                  
+                }
+                return tab;
+                
+            }
+            public Complex[] BitmapToComplex(Bitmap bitmap)
+            {
+                Complex[] complex = new Complex[bitmap.Height * bitmap.Width];
+                int index = 0;
+                for(int i = 0; i < bitmap.Height; i++)
+                {
+                    for(int k = 0; k < bitmap.Width; k++)
+                    {
+                        var pixel=bitmap.GetPixel(k, i);
+                        complex[index] = pixel.R;
+                        ++index;
+                    }
+                }
+                return complex;
+            }
+            public Bitmap BitmapToGrayscale(Bitmap bitmap/*,string filename*/)
+            {
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        var pixel = bitmap.GetPixel(x, y);
+                        int a = pixel.A;
+                        if (pixel.A == 0)
+                        {
+                            a = 255;
+                        }
+                        
+                        int avg = (pixel.R + pixel.G + pixel.B)/3;
+                        bitmap.SetPixel(x, y, System.Drawing.Color.FromArgb(a, avg, avg, avg));
+                    }
+                }
+                //bitmap.Save(filename);
+                return bitmap;
+            }
+        }
+        
         /************************************************************************************************************************************************************/
         /*                                                      CZĘŚĆ DOTYCZĄCA MENU I JEGO OPCJI                                                                  */
         /************************************************************************************************************************************************************/
@@ -1149,6 +1210,7 @@ namespace PNG_WindowAPP
             Console.WriteLine("3 - Choose chunk to display info about that");
             Console.WriteLine("4 - Choose chunk you want delete (only ancillary chunk)");
             Console.WriteLine("5 - Change .png filename");
+            Console.WriteLine("6 - FFT");
             Console.WriteLine("0 - Exit");
         }
 
@@ -1166,10 +1228,10 @@ namespace PNG_WindowAPP
         }
 
         /************************************************************************************************************************************************************/
-        static void InfoAboutChunk(Metadane info, string chunk)
+        static void InfoAboutChunk(Metadane info, string chunk, PNG wczytany)
         {
             // Chunk bKGD
-            if(chunk == "bKGD")
+            if(chunk == "bKGD" && IsThatChunk(wczytany,"bKGD"))
             {
                 Console.WriteLine("bKGD: ");
                 if(info.IHDR.Color_type == 3)
@@ -1187,9 +1249,13 @@ namespace PNG_WindowAPP
                     Console.WriteLine("     Blue: " + info.bKGD.Blue);
                 }
             }
+            else if (chunk == "bKGD")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk cHRM
-            if(chunk == "cHRM")
+            if(chunk == "cHRM" && IsThatChunk(wczytany,chunk))
             {
                 Console.WriteLine("cHRM: ");
                 Console.WriteLine("     White Point x: " + info.cHRM.WhitePointX);
@@ -1201,24 +1267,36 @@ namespace PNG_WindowAPP
                 Console.WriteLine("     Blue x: " + info.cHRM.BlueX);
                 Console.WriteLine("     Blue y: " + info.cHRM.BlueY);
             }
+            else if (chunk == "cHRM")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk gAMA
-            if (chunk == "gAMA")
+            if (chunk == "gAMA" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("gAMA:");
                 Console.WriteLine("     Gamma: " + info.gAMA + " (1/" + info.gAMA + ")");
             }
+            else if (chunk == "gAMA")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             //Chunk iCCP
-            if (chunk == "iCCP")
+            if (chunk == "iCCP" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("iCCP: ");
                 Console.WriteLine("     Profile name: " + info.iCCP.ProfileName);
                 Console.WriteLine("     Compression method: " + info.iCCP.CompressionMethod);
             }
+            else if (chunk == "iCCP")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk iTXT
-            if(chunk == "iTXt")
+            if (chunk == "iTXt" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("iTXt:");
                 Console.WriteLine("     Keyword: " + info.iTXt.Keyword);
@@ -1228,18 +1306,26 @@ namespace PNG_WindowAPP
                 Console.WriteLine("     Translated keyword: " + info.iTXt.TranslatedKeyword);
                 Console.WriteLine("     Text: " + info.iTXt._Text);
             }
+            else if (chunk == "iTXt")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk pHYs
-            if(chunk == "pHYs")
+            if (chunk == "pHYs" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("pHYs: ");
                 Console.WriteLine("     Pixels per unit, X axis: " + BitConverter.ToInt32(info.pHYs.Xaxis,0));
                 Console.WriteLine("     Pixels per unit, Y axis: " + BitConverter.ToInt32(info.pHYs.Yaxis, 0));
                 Console.WriteLine("     Unit specifier: " + info.pHYs.unitSpecifier);
             }
+            else if (chunk == "pHYs")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk sBIT
-            if(chunk == "sBIT")
+            if (chunk == "sBIT" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("sBIT: ");
                 if(info.IHDR.Color_type == 0)
@@ -1275,15 +1361,23 @@ namespace PNG_WindowAPP
                     Console.WriteLine("         Alpha: " + info.sBIT.sAlpha);
                 }
             }
-            
+            else if (chunk == "sBIT")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
+
             // Chunk sRGB
-            if(chunk == "sRGB")
+            if (chunk == "sRGB" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("sRGB:");
                 Console.WriteLine("     Rendering intent: " + info.sRGB);
             }
+            else if (chunk == "sRGB")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
-            if(chunk == "tRNS")
+            if (chunk == "tRNS" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("tRNS:");
                 if(info.IHDR.Color_type == 3)
@@ -1306,17 +1400,25 @@ namespace PNG_WindowAPP
                     Console.WriteLine("     Blue: " + BitConverter.ToInt32(info.tRNS.Blue, 0) + ", range 0 .. " + range);
                 }
             }
+            else if (chunk == "tRNS")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk tEXt
-            if(chunk == "tEXt")
+            if (chunk == "tEXt" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("tEXt");
                 Console.WriteLine("     Keyword: " + info.tEXt.Keyword);
                 Console.WriteLine("     Text: " + info.tEXt._Text);
             }
+            else if (chunk == "tEXt")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk tIME
-            if(chunk == "tIME")
+            if (chunk == "tIME" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("tIME:");
                 Console.WriteLine("     Year: " + BitConverter.ToInt16(info.tIME.Year,0));
@@ -1326,17 +1428,58 @@ namespace PNG_WindowAPP
                 Console.WriteLine("     Minute: " + info.tIME.Minute);
                 Console.WriteLine("     Second: " + info.tIME.Second);
             }
+            else if (chunk == "tIME")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
             // Chunk zTXt
-            if(chunk == "zTXt")
+            if (chunk == "zTXt" && IsThatChunk(wczytany, chunk))
             {
                 Console.WriteLine("zTXt:");
 
-                for(int i=0; i<info.zTXt.Count;i++)
-                    Console.WriteLine("     Keyword: " + info.zTXt[i].Keyword);
-                //Console.WriteLine("     Compression method: " + info.zTXt.CompressionMethod);
-                //Console.WriteLine("     Text: " + info.zTXt._Text);
+                for(int i=0; i < info.zTXt.Count; i++)
+                {
+                    Console.WriteLine("     " + info.zTXt[i].Keyword+": " +info.zTXt[i]._Text);
+                    Console.WriteLine("     Compression method: " + info.zTXt[i].CompressionMethod);
+                }
+            }
+            else if (chunk == "zTXt")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
 
+            // Chunk sPLT
+            if (chunk == "sPLT" && IsThatChunk(wczytany, chunk))
+            {
+                Console.WriteLine("sPLT:");
+                Console.WriteLine("     Chunk length: " + info.sPLT);
+            }
+            else if (chunk == "sPLT")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
+
+            // Chunk hIST
+            if (chunk == "hIST" && IsThatChunk(wczytany, chunk))
+            {
+                Console.WriteLine("hIST:");
+                Console.WriteLine("     Chunk length: " + info.hIST);
+            }
+            else if (chunk == "hIST")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
+            }
+
+            // Chunk eXIf
+            if (chunk == "eXIf" && IsThatChunk(wczytany, chunk))
+            {
+                Console.WriteLine("eXIf:");
+                Console.WriteLine("     Chunk length: " + info.eXIf);
+            }
+            else if (chunk == "eXIf")
+            {
+                Console.WriteLine("In your .png file isn't " + chunk + " chunk!");
             }
         }
 
@@ -1373,6 +1516,7 @@ namespace PNG_WindowAPP
             }
             // Jeżeli tak to ładujemy dane o nim
             byte[] plik = File.ReadAllBytes(filenameIN);
+            Bitmap bitmap = new Bitmap(filenameIN);
             PNG wczytany = Loader(plik);
             wczytany = Joint(wczytany);
             Metadane przeanalizowany = Parser(wczytany);
@@ -1453,7 +1597,7 @@ namespace PNG_WindowAPP
                     case "3":
                         Console.Write("Please enter chunk name: ");
                         string chunk = Console.ReadLine();
-                        InfoAboutChunk(przeanalizowany, chunk);
+                        InfoAboutChunk(przeanalizowany, chunk,wczytany);
                         break;
                     /******************************************************************************************************************************************/
                     /*                                                       USUWANIE CHUNKÓW                                                                 */
@@ -1512,6 +1656,7 @@ namespace PNG_WindowAPP
                                 byte[] temp = new byte[leng];
                                 Array.Copy(wczytany.headline, 0, temp, 0, 8);
                                 string chunk_tab = "IHDR IDAT PLTE IEND";
+                                string[] chunki = chunk_tab.Split(new char[] { ' ' });
                                 for (int k = 0; k < wczytany.zawartosc.Count; k++)
                                 {
                                     if (chunk_tab.Contains(Encoding.Default.GetString(wczytany.zawartosc[k].type)))
@@ -1526,6 +1671,14 @@ namespace PNG_WindowAPP
 
                                     }
                                     File.WriteAllBytes(filenameOUT, temp);
+                                }
+                                for (int l = 0; l < wczytany.zawartosc.Count; l++)
+                                {
+                                    if (!AllChunksInLine(chunki, Encoding.Default.GetString(wczytany.zawartosc[l].type)))
+                                    {
+                                        wczytany.zawartosc.Remove(wczytany.zawartosc[l]);
+                                        l--;
+                                    }
                                 }
                                 break;
                             case "0":
@@ -1618,6 +1771,23 @@ namespace PNG_WindowAPP
                             File.Copy(filenameIN, filenameOUT, true);
                         }
                         break;
+                    case "6":
+                        FFT fft = new FFT();
+                        Bitmap b;
+                        Complex[,] comp;
+                        b=fft.BitmapToGrayscale(bitmap);
+                        
+                        double corrected_width = Math.Pow(2, Math.Ceiling(Math.Log(bitmap.Width) / Math.Log(2)));
+                        double corrected_height = Math.Pow(2, Math.Ceiling(Math.Log(bitmap.Height) / Math.Log(2)));
+                        comp = fft.Truncate(b,corrected_width,corrected_height);
+                        //MathNet.Numerics.IntegralTransforms.Fourier.Forward2D(comp, (int)corrected_height, (int)corrected_width, MathNet.Numerics.IntegralTransforms.FourierOptions.NoScaling);
+                        Accord.Math.FourierTransform.FFT2(comp, Accord.Math.FourierTransform.Direction.Forward);
+                        
+                      
+                        b =fft.AbsToBitmap(comp, corrected_width, corrected_height);
+                        b.Save(filenameOUT);
+                        break;
+
                     /******************************************************************************************************************************************/
                     /*                                                      WYJŚCIE Z PROGRAMU                                                                */
                     /******************************************************************************************************************************************/
@@ -1640,6 +1810,15 @@ namespace PNG_WindowAPP
                 if (type == chunk) return true;
             }
             return false;
+        }
+
+        static bool IsThatChunk(PNG wczytany, string chunk)
+        {
+            for(int i = 0; i < wczytany.zawartosc.Count; i++)
+            {
+                if (Encoding.Default.GetString(wczytany.zawartosc[i].type) == chunk) return true;
+            }
+            return false;            
         }
 
     }

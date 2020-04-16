@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\E_media\\PNGapp _ kopia\\PNGapp.csproj": {}
+    "C:\\Users\\Alusia\\Desktop\\E-media\\E-media\\PNGapp.csproj": {}
   },
   "projects": {
-    "D:\\E_media\\PNGapp _ kopia\\PNGapp.csproj": {
+    "C:\\Users\\Alusia\\Desktop\\E-media\\E-media\\PNGapp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\E_media\\PNGapp _ kopia\\PNGapp.csproj",
+        "projectUniqueName": "C:\\Users\\Alusia\\Desktop\\E-media\\E-media\\PNGapp.csproj",
         "projectName": "PNGapp",
-        "projectPath": "D:\\E_media\\PNGapp _ kopia\\PNGapp.csproj",
+        "projectPath": "C:\\Users\\Alusia\\Desktop\\E-media\\E-media\\PNGapp.csproj",
         "packagesPath": "C:\\Users\\Alusia\\.nuget\\packages\\",
-        "outputPath": "D:\\E_media\\PNGapp _ kopia\\obj\\",
+        "outputPath": "C:\\Users\\Alusia\\Desktop\\E-media\\E-media\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Microsoft\\Xamarin\\NuGet\\",
@@ -43,9 +43,25 @@
       "frameworks": {
         "netcoreapp2.1": {
           "dependencies": {
+            "AForge.Imaging": {
+              "target": "Package",
+              "version": "[2.2.5, )"
+            },
+            "Accord.Imaging": {
+              "target": "Package",
+              "version": "[3.8.0, )"
+            },
+            "Accord.Math": {
+              "target": "Package",
+              "version": "[3.8.0, )"
+            },
             "DotNetZip": {
               "target": "Package",
               "version": "[1.13.7, )"
+            },
+            "MathNet.Numerics": {
+              "target": "Package",
+              "version": "[4.9.1, )"
             },
             "Microsoft.NETCore.App": {
               "suppressParent": "All",
@@ -56,6 +72,10 @@
             "SharpZipLib": {
               "target": "Package",
               "version": "[1.2.0, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[4.7.0, )"
             }
           },
           "imports": [

@@ -34,3 +34,16 @@ D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.dll
 D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.pdb
 D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.genruntimeconfig.cache
 D:\E_media\PNGapp _ kopia\obj\Debug\netcoreapp2.1\PNGapp.csproj.CoreCompileInputs.cache
+C:\Users\Alusia\Desktop\E-media\E-media\bin\Debug\netcoreapp2.1\PNGapp.deps.json
+C:\Users\Alusia\Desktop\E-media\E-media\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.json
+C:\Users\Alusia\Desktop\E-media\E-media\bin\Debug\netcoreapp2.1\PNGapp.runtimeconfig.dev.json
+C:\Users\Alusia\Desktop\E-media\E-media\bin\Debug\netcoreapp2.1\PNGapp.dll
+C:\Users\Alusia\Desktop\E-media\E-media\bin\Debug\netcoreapp2.1\PNGapp.pdb
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.csprojAssemblyReference.cache
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfoInputs.cache
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.AssemblyInfo.cs
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.dll
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.pdb
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.genruntimeconfig.cache
+C:\Users\Alusia\Desktop\E-media\E-media\bin\Debug\netcoreapp2.1\Accord.dll.config
+C:\Users\Alusia\Desktop\E-media\E-media\obj\Debug\netcoreapp2.1\PNGapp.csproj.CoreCompileInputs.cache

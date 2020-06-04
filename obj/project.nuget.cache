@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "2Y9ihalVz/UUDjbIiEKGH/mLKnMoAn8icEQ0IRjLF54hiCdvSg09qMV8vuzhMEatWXUGX28+vGpVr1qSuFBCwA==",
+  "dgSpecHash": "V97wTzwtiC9yQ51Oi9XrgKsMCk7FOxaaF1vRmI4pQJdgZJ6GIK+7sfwRC29eXEH7IT13AxZuCx4BkmxRl+zDBg==",
   "success": true,
   "projectFilePath": "C:\\Users\\Alusia\\Desktop\\E-media\\E-media\\PNGapp.csproj",
   "expectedPackageFiles": [
@@ -30,7 +30,9 @@
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\system.security.principal.windows\\4.5.0\\system.security.principal.windows.4.5.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\system.text.encoding\\4.3.0\\system.text.encoding.4.3.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\system.text.encoding.codepages\\4.5.0\\system.text.encoding.codepages.4.5.0.nupkg.sha512",
-    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\system.text.encoding.extensions\\4.3.0\\system.text.encoding.extensions.4.3.0.nupkg.sha512"
+    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\system.text.encoding.extensions\\4.3.0\\system.text.encoding.extensions.4.3.0.nupkg.sha512",
+    "C:\\Users\\Alusia\\.nuget\\packages\\ultimateorb.int128\\1.0.8\\ultimateorb.int128.1.0.8.nupkg.sha512",
+    "C:\\Users\\Alusia\\.nuget\\packages\\ultimateorb.mathematics.doublearithmetic.core\\1.2.12\\ultimateorb.mathematics.doublearithmetic.core.1.2.12.nupkg.sha512"
   ],
   "logs": [
     {

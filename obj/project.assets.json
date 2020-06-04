@@ -481,6 +481,30 @@
         "compile": {
           "ref/netstandard1.3/System.Text.Encoding.Extensions.dll": {}
         }
+      },
+      "UltimateOrb.Int128/1.0.8": {
+        "type": "package",
+        "dependencies": {
+          "UltimateOrb.Mathematics.DoubleArithmetic.Core": "1.2.12"
+        },
+        "compile": {
+          "lib/netstandard2.0/UltimateOrb.Int128.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/UltimateOrb.Int128.dll": {}
+        }
+      },
+      "UltimateOrb.Mathematics.DoubleArithmetic.Core/1.2.12": {
+        "type": "package",
+        "dependencies": {
+          "NETStandard.Library": "1.6.1"
+        },
+        "compile": {
+          "lib/netstandard1.0/UltimateOrb.Mathematics.DoubleArithmetic.Core.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.0/UltimateOrb.Mathematics.DoubleArithmetic.Core.dll": {}
+        }
       }
     }
   },
@@ -1675,6 +1699,31 @@
         "system.text.encoding.extensions.4.3.0.nupkg.sha512",
         "system.text.encoding.extensions.nuspec"
       ]
+    },
+    "UltimateOrb.Int128/1.0.8": {
+      "sha512": "PVlqEdlohbzMgkenV7L1QZ2x+msQeOZ3KYv3lhpwjIhNJ7Pgto3mDZfglKKTCrNrmLWf0eCGyVEvC6GJ9p9D2w==",
+      "type": "package",
+      "path": "ultimateorb.int128/1.0.8",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netstandard2.0/UltimateOrb.Int128.dll",
+        "ultimateorb.int128.1.0.8.nupkg.sha512",
+        "ultimateorb.int128.nuspec"
+      ]
+    },
+    "UltimateOrb.Mathematics.DoubleArithmetic.Core/1.2.12": {
+      "sha512": "sHwMvJSNGDfmws79ck+D/uDrwr/Nycx2qgG5Mgu8ycUYknwVoff2G6Pi7Qu4ODM8ctp/SUtz2TYVSikcL4aVpg==",
+      "type": "package",
+      "path": "ultimateorb.mathematics.doublearithmetic.core/1.2.12",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netstandard1.0/UltimateOrb.Mathematics.DoubleArithmetic.Core.dll",
+        "lib/netstandard1.0/UltimateOrb.Mathematics.DoubleArithmetic.Core.xml",
+        "ultimateorb.mathematics.doublearithmetic.core.1.2.12.nupkg.sha512",
+        "ultimateorb.mathematics.doublearithmetic.core.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -1686,7 +1735,8 @@
       "MathNet.Numerics >= 4.9.1",
       "Microsoft.NETCore.App >= 2.1.0",
       "SharpZipLib >= 1.2.0",
-      "System.Drawing.Common >= 4.7.0"
+      "System.Drawing.Common >= 4.7.0",
+      "UltimateOrb.Int128 >= 1.0.8"
     ]
   },
   "packageFolders": {
@@ -1766,6 +1816,10 @@
           "System.Drawing.Common": {
             "target": "Package",
             "version": "[4.7.0, )"
+          },
+          "UltimateOrb.Int128": {
+            "target": "Package",
+            "version": "[1.0.8, )"
           }
         },
         "imports": [
@@ -1778,7 +1832,7 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.200\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.201\\RuntimeIdentifierGraph.json"
       }
     }
   },

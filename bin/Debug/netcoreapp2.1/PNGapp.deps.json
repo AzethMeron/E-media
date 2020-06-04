@@ -14,7 +14,8 @@
           "DotNetZip": "1.13.7",
           "MathNet.Numerics": "4.9.1",
           "SharpZipLib": "1.2.0",
-          "System.Drawing.Common": "4.7.0"
+          "System.Drawing.Common": "4.7.0",
+          "UltimateOrb.Int128": "1.0.8"
         },
         "runtime": {
           "PNGapp.dll": {}
@@ -241,6 +242,25 @@
           "System.Runtime": "4.3.0",
           "System.Text.Encoding": "4.3.0"
         }
+      },
+      "UltimateOrb.Int128/1.0.8": {
+        "dependencies": {
+          "UltimateOrb.Mathematics.DoubleArithmetic.Core": "1.2.12"
+        },
+        "runtime": {
+          "lib/netstandard2.0/UltimateOrb.Int128.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "UltimateOrb.Mathematics.DoubleArithmetic.Core/1.2.12": {
+        "runtime": {
+          "lib/netstandard1.0/UltimateOrb.Mathematics.DoubleArithmetic.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
       }
     }
   },
@@ -396,6 +416,20 @@
       "sha512": "sha512-YVMK0Bt/A43RmwizJoZ22ei2nmrhobgeiYwFzC4YAN+nue8RF6djXDMog0UCn+brerQoYVyaS+ghy9P/MUVcmw==",
       "path": "system.text.encoding.extensions/4.3.0",
       "hashPath": "system.text.encoding.extensions.4.3.0.nupkg.sha512"
+    },
+    "UltimateOrb.Int128/1.0.8": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PVlqEdlohbzMgkenV7L1QZ2x+msQeOZ3KYv3lhpwjIhNJ7Pgto3mDZfglKKTCrNrmLWf0eCGyVEvC6GJ9p9D2w==",
+      "path": "ultimateorb.int128/1.0.8",
+      "hashPath": "ultimateorb.int128.1.0.8.nupkg.sha512"
+    },
+    "UltimateOrb.Mathematics.DoubleArithmetic.Core/1.2.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-sHwMvJSNGDfmws79ck+D/uDrwr/Nycx2qgG5Mgu8ycUYknwVoff2G6Pi7Qu4ODM8ctp/SUtz2TYVSikcL4aVpg==",
+      "path": "ultimateorb.mathematics.doublearithmetic.core/1.2.12",
+      "hashPath": "ultimateorb.mathematics.doublearithmetic.core.1.2.12.nupkg.sha512"
     }
   }
 }

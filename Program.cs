@@ -4,14 +4,16 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using System.Numerics;
-using AForge.Imaging;
 using System.Drawing;
-using System.Numerics;
 using Accord.Math;
-using MathNet.Numerics.IntegralTransforms;
-using Accord.Imaging.Converters;
-using System.IO.Compression;
-using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
+using UltimateOrb;
+using System.Security.Cryptography;
+using System.ComponentModel.DataAnnotations.Schema;
+using Accord.Math.Optimization;
+using Accord;
+using Ionic.Zlib;
+
+
 
 namespace PNG_WindowAPP
 {
@@ -35,6 +37,7 @@ namespace PNG_WindowAPP
         public byte[] type;
         public byte[] data;
         public byte[] crc;
+       
         public int Przesunięcie() // Zwraca liczbe bajtów zajmowanych przez Typ, Dane oraz CRC
         {
             return type.Length + data.Length + crc.Length;
@@ -70,6 +73,8 @@ namespace PNG_WindowAPP
             Console.WriteLine(BitConverter.ToString(data));
             Console.WriteLine(BitConverter.ToString(crc));
         }
+
+        
     }
 
     public class Ihdr
@@ -216,6 +221,7 @@ namespace PNG_WindowAPP
         public const string tIME = "74-49-4D-45";
         public const string sPLT = "73-50-4C-54";
         public const string hIST = "68-49-53-54";
+        public const string xDxD = "78-44-78-44";
     }
    
 
@@ -1030,6 +1036,7 @@ namespace PNG_WindowAPP
                 baza_typów.Add(Constans.tIME); // tIME
                 baza_typów.Add(Constans.zTXt); // zTXt
                 baza_typów.Add(Constans.sPLT); // sPLT
+                baza_typów.Add(Constans.xDxD); 
                 baza_typów.Add(Constans.hIST); // hIST
 
                 // Parser metadanych
@@ -1483,6 +1490,445 @@ namespace PNG_WindowAPP
             }
         }
 
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //                                                                                                                                                        //
+        //                                                              SZYFROWANIE RSA                                                                           //
+        //                                                                                                                                                        //
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        public class Key
+        {
+            public BigInteger left { get; set; }
+            public BigInteger right { get; set;  }
+            public Key() { }
+        }
+        // Losowanie nieparzystej liczby 64 bitowej
+        static BigInteger RandomBigNumber()
+        {
+            Random rnd = new Random();
+            RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
+            BigInteger byt = 0;
+            do
+            {
+                BigInteger uint64 = BigInteger.Multiply(UInt64.MaxValue, rnd.Next());
+                BigInteger number = BigInteger.Pow(uint64, 3);
+                byte[] by = number.ToByteArray();
+                rngCsp.GetBytes(by);
+                byt = new BigInteger(by);
+                if (byt < 0)
+                {
+                    byt = byt * (-1);
+                }
+            } while (byt % 2 == 0);
+            return byt;
+        }
+        static BigInteger ExtendedAlgorithmEuklides(BigInteger a, BigInteger b)
+        {
+            // Współczynniki równań
+            BigInteger u = 1;
+            BigInteger w = a;
+            BigInteger x = 0;
+            BigInteger z = b;
+
+            BigInteger q = 0; // całkowity iloraz 
+            BigInteger swap = 0; // zmienna pomocnicza do zamiany wartosci zmiennych
+
+            while (w != 0)
+            {
+                if (w < z)
+                {
+                    // u <-> x
+                    swap = u;
+                    u = x;
+                    x = swap;
+
+                    // w <-> z
+                    swap = w;
+                    w = z;
+                    z = swap;
+                }
+                q = w / z;
+                u -= q * x;
+                w -= q * z;
+            }
+            if (z == 1)
+            {
+                if (x < 0)
+                {
+                    x = x + b;
+                }
+                return x;
+            }
+            return 0;
+        }
+        // Generowanie kluczy RSA
+        static List<Key> RSA_key()
+        {
+            BigInteger p = RandomBigNumber();
+            BigInteger q = RandomBigNumber();
+            List<Key> keys = new List<Key>();
+
+            do
+            {
+                while (!IsPrime(p, 10))
+                {
+                    p = RandomBigNumber();
+                }
+
+                while (!IsPrime(q, 10))
+                {
+                    q = RandomBigNumber();
+                }
+            } while (p == q);
+
+            BigInteger phi = (p - 1) * (q - 1); // phi - funkcja eulera
+            BigInteger n = p * q; // n - moduł
+
+            // Szukanie liczby e, która jest względnie pierwsza
+            BigInteger e;
+            for (e = 3; BigInteger.GreatestCommonDivisor(e, phi) != 1; e += 2) ;
+            BigInteger d;
+            d = ExtendedAlgorithmEuklides(e, phi);
+            if (d == 0) Console.WriteLine("Insert modulo doesn't exist");
+
+            keys.Add(new Key { left = e, right = n });
+            keys.Add(new Key { left = d, right = n });
+            return keys;
+
+        }
+
+     
+        static byte[] Padding(BigInteger number, int len)
+        {
+            byte[] temp = number.ToByteArray();
+            
+            if(temp.Length == len)
+            {
+                return temp;
+            }
+            else
+            {
+                byte[] output = new byte[len];
+               // if (BitConverter.IsLittleEndian) Array.Reverse(temp);
+                for(int i =0; i< output.Length; i++)
+                {
+                    output[i] = 0;
+                }
+                Array.Copy(temp, 0, output, 0, temp.Length);
+                return output;
+            }
+            
+        }
+
+        static Chunk newChunk(string name, int len, byte[] data)
+        {
+            Chunk chunk = new Chunk();
+            byte[] _len = BitConverter.GetBytes(len);
+            if (BitConverter.IsLittleEndian) Array.Reverse(_len);
+            byte[] _name = Encoding.ASCII.GetBytes(name);
+            Crc32 Crc = new Crc32();
+            byte[] crc = Crc.ComputeChecksumBytes(data);
+            chunk.length = _len;
+            chunk.type = _name;
+            chunk.data = data;
+            chunk.crc = crc;
+            return chunk;
+        }
+
+        // Szyfrowanie danych
+        static PNG Encrypt(PNG png, BigInteger e, BigInteger n, BigInteger d)
+        {
+            Metadane info = new Metadane();
+            for (int i = 0; i < png.zawartosc.Count; i++)
+            {
+                string type = (BitConverter.ToString(png.zawartosc[i].type));
+                byte[] data = png.zawartosc[i].data;
+                BigInteger temp;
+                BigInteger max=0;
+                byte[] maxByte;
+                int maxLength = 0;
+                byte tmp;//= new byte[data.Length];
+            
+                BigInteger[] bigTab = new BigInteger[data.Length];
+                string dekompres;
+                if (type == Constans.IDAT)
+                {
+                    Chunk ob = png.zawartosc[i];
+                    Array.Resize(ref ob.data, data.Length);
+                    Array.Copy(data, ob.data, data.Length);
+                    png.zawartosc[i] = ob;
+                    Array.Resize(ref bigTab, data.Length);
+                    for (int k = 2; k < png.zawartosc[i].data.Length; k++)
+                    {
+                        temp = BigInteger.ModPow(png.zawartosc[i].data[k], e, n);
+                        bigTab[k] = temp;                        
+                        if(max < bigTab[k]) 
+                        {
+                            max = bigTab[k];
+                        }
+                    }
+                    BigInteger[] b_temp = new BigInteger[bigTab.Length-2];
+                    Array.Copy(bigTab, 2, b_temp, 0, b_temp.Length);
+                    maxLength = max.ToByteArray().Length;
+                    byte[] encrypt = new byte[maxLength * b_temp.Length+4];
+                    for(int l = 0; l<b_temp.Length; l++)
+                    {
+                        Array.Copy(Padding(b_temp[l], maxLength),0, encrypt, 4+l*maxLength, maxLength);
+                    }
+                    byte[] tmp_maxLen = BitConverter.GetBytes(maxLength);
+                    if (BitConverter.IsLittleEndian) Array.Reverse(tmp_maxLen);
+                    Array.Copy(tmp_maxLen, 0, encrypt, 0, 4);
+                    Chunk ch = newChunk("xDxD", encrypt.Length, encrypt);
+                    for(int c = 0; c < png.zawartosc.Count; c++)
+                    {
+                        string _type = (BitConverter.ToString(png.zawartosc[c].type));
+                        if (_type == Constans.IEND)
+                        {
+                            png.zawartosc.Insert(c, ch);
+                            break;
+                        }
+                    }
+
+                
+                    Array.Copy(encrypt, 0, png.zawartosc[i].data, 2, png.zawartosc[i].data.Length - 2);
+                   
+                }
+
+            }
+                
+            
+            return png;
+        }
+
+        // Odszyfrowywanie
+        static PNG Decryption(PNG png, BigInteger d, BigInteger n)
+        {
+            int index_idat = 0;
+            int index_xdxd = 0;
+
+            for(int i = 0; i < png.zawartosc.Count; i++)
+            {
+                string type = (BitConverter.ToString(png.zawartosc[i].type));
+                if(type == Constans.IDAT)
+                {
+                    index_idat = i;
+                }
+                else if(type == Constans.xDxD)
+                {
+                    index_xdxd = i;
+                }
+            }
+
+            Chunk chunk = png.zawartosc[index_xdxd];
+
+            byte[] encrypt = png.zawartosc[index_xdxd].data;
+            byte[] len = new byte[4];
+            Array.Copy(encrypt, 0, len, 0, 4);
+            if (BitConverter.IsLittleEndian) Array.Reverse(len);
+            int _len = BitConverter.ToInt32(len, 0);
+
+            BigInteger[] bigTab = new BigInteger[(encrypt.Length-4)/_len];
+            for(int i=0; i < bigTab.Length; i++)
+            {
+                byte[] tmp = new byte[_len];
+                Array.Copy(encrypt, 4 + i * _len, tmp, 0, _len);
+                BigInteger big = new BigInteger(tmp);
+                bigTab[i] = big;
+            }
+
+            byte[] _bigTab = new byte[bigTab.Length + 2];
+            _bigTab[0] = png.zawartosc[index_idat].data[0];
+            _bigTab[1] = png.zawartosc[index_idat].data[1];
+
+            for(int i=0; i < bigTab.Length; i++)
+            {
+                _bigTab[i+2] = (byte)BigInteger.ModPow(bigTab[i], d, n);
+            }
+
+            Array.Copy(_bigTab, 0, png.zawartosc[index_idat].data, 0, _bigTab.Length);
+            png.zawartosc.Remove(chunk);
+            return png;
+        }
+
+        public static byte[] RSAEncryptPart(byte[] DataToEncrypt, RSAParameters RSAKeyInfo, bool DoOAEPPadding)
+        {
+            try
+            {
+                byte[] encryptedData;
+                //Create a new instance of RSACryptoServiceProvider.
+                using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider())
+                {
+
+                    //Import the RSA Key information. This only needs
+                    //toinclude the public key information.
+                    RSA.ImportParameters(RSAKeyInfo);
+
+                    //Encrypt the passed byte array and specify OAEP padding.  
+                    //OAEP padding is only available on Microsoft Windows XP or
+                    //later.  
+                    encryptedData = RSA.Encrypt(DataToEncrypt, DoOAEPPadding);
+                }
+                return encryptedData;
+            }
+            //Catch and display a CryptographicException  
+            //to the console.
+            catch (CryptographicException e)
+            {
+                Console.WriteLine(e.Message);
+
+                return null;
+            }
+        }
+
+        static PNG RSAEncryptAll(PNG png, RSAParameters RSAKeyInfo)
+        {
+            for (int i = 0; i < png.zawartosc.Count; i++)
+            {
+                string type = (BitConverter.ToString(png.zawartosc[i].type));
+                if (type == Constans.IDAT)
+                {
+                    byte[] data = png.zawartosc[i].data;
+                    byte[] encrypted = new byte[data.Length];
+                    int before = 0;
+                    int sum = 0;
+                    for (int j = 2; j < data.Length / 117; j++)
+                    {
+                        byte[] data_pom = new byte[117];
+                        byte[] encrypted_pom;
+                        for (int k = 0; k < 117; k++)
+                        {
+                            data_pom[k] = data[j + k];
+                        }
+                        encrypted_pom = RSAEncryptPart(data_pom, RSAKeyInfo, false);
+                        sum = before + encrypted_pom.Length;
+                        Console.WriteLine("enctypted pom: " + encrypted_pom.Length);
+                        Array.Resize(ref encrypted, sum);
+                        Array.Copy(encrypted_pom, 0, encrypted, before, encrypted_pom.Length);
+                        before = sum;
+
+                    }
+                    Console.WriteLine(encrypted.Length);
+                    Console.WriteLine(data.Length);
+                    Array.Copy(encrypted, 0, png.zawartosc[i].data, 2, png.zawartosc[i].data.Length - 2);
+                }
+            }
+            return png;
+        }
+
+        public static byte[] RSADecryptPart(byte[] DataToDecrypt, RSAParameters RSAKeyInfo, bool DoOAEPPadding)
+        {
+            try
+            {
+                byte[] decryptedData;
+                //Create a new instance of RSACryptoServiceProvider.
+                using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider())
+                {
+                    //Import the RSA Key information. This needs
+                    //to include the private key information.
+                    RSA.ImportParameters(RSAKeyInfo);
+
+                    //Decrypt the passed byte array and specify OAEP padding.  
+                    //OAEP padding is only available on Microsoft Windows XP or
+                    //later.  
+                    decryptedData = RSA.Decrypt(DataToDecrypt, DoOAEPPadding);
+                }
+                return decryptedData;
+            }
+            //Catch and display a CryptographicException  
+            //to the console.
+            catch (CryptographicException e)
+            {
+                Console.WriteLine(e.ToString());
+
+                return null;
+            }
+        }
+
+        static PNG RSADecryptAll(PNG png, RSAParameters RSAKeyInfo)
+        {
+            for (int i = 0; i < png.zawartosc.Count; i++)
+            {
+                string type = (BitConverter.ToString(png.zawartosc[i].type));
+                if (type == Constans.IDAT)
+                {
+                    byte[] data = png.zawartosc[i].data;
+                    byte[] decrypted = new byte[data.Length];
+                    int before = 0;
+                    int sum = 0;
+                    for (int j = 2; j < data.Length / 117-2; j++)
+                    {
+                        byte[] data_pom = new byte[117];
+                        
+                        for (int k = 0; k < 117; k++)
+                        {
+                            data_pom[k] = data[j + k];
+                        }
+                        byte[]  decrypted_pom = RSADecryptPart(data_pom, RSAKeyInfo, false);
+                        sum = before + decrypted_pom.Length;
+                        Console.WriteLine("enctypted pom: " + decrypted_pom.Length);
+                        Array.Resize(ref decrypted, sum);
+                        Array.Copy(decrypted_pom, 0, decrypted, before, decrypted_pom.Length);
+                        before = sum;
+
+                    }
+                    Console.WriteLine(decrypted.Length);
+                    Console.WriteLine(data.Length);
+                    Array.Copy(decrypted, 0, png.zawartosc[i].data, 2, png.zawartosc[i].data.Length - 2);
+                }
+            }
+            return png;
+        }
+
+        static bool IsPrime(BigInteger prime, int n) //prime - liczba, ktora sprawdzamy, czy jest pierwsza; n - ilosc powtorzen testu millera-rabina
+        {
+            if (prime == 2 || prime == 3)
+                return true;
+            if (prime < 2 || prime % 2 == 0)
+                return false;
+
+            BigInteger d = prime - 1; // mnoznik potegi 2 w dzielniku prime-1
+            int s = 0; // wykladnik potegi 2 w dzielniku prime-1
+
+            while (d % 2 == 0)
+            {
+                s++;
+                d /= 2;
+            }
+
+            // There is no built-in method for generating random BigInteger values.
+            // Instead, random BigIntegers are constructed from randomly generated
+            // byte arrays of the same length as the source.
+            RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            byte[] bytes = new byte[prime.ToByteArray().LongLength];
+            BigInteger a;
+
+            for (int i = 0; i < n; i++)
+            {
+                do
+                {                  
+                    rng.GetBytes(bytes);
+                    a = new BigInteger(bytes);
+                }while (a < 2 || a >= prime - 2);
+
+                BigInteger x = BigInteger.ModPow(a, d, prime);
+                if (x == 1 || x == prime - 1) continue;
+
+                for (int j = 1; j < s; j++)
+                {
+                    x = BigInteger.ModPow(x, 2, prime);
+                    if (x == 1)
+                        return false;
+                    if (x == prime - 1)
+                        break;
+                }
+
+                if (x != prime - 1)
+                    return false;
+            }
+
+            return true;
+        }
         /************************************************************************************************************************************************************/
         static void Menu()
         {
@@ -1564,7 +2010,17 @@ namespace PNG_WindowAPP
             {
                 File.Copy(filenameIN, filenameOUT,true);
             }
+            List<Key> keys = new List<Key>();
+            keys = RSA_key();
+            BigInteger e = keys[0].left;
+            BigInteger d = keys[1].left;
+            BigInteger n = keys[1].right;
 
+            RSACryptoServiceProvider RSA = new RSACryptoServiceProvider();
+            RSAParameters RSAKey = new RSAParameters();
+            RSAKey.Exponent = e.ToByteArray();
+            RSAKey.D = d.ToByteArray();
+            RSAKey.Modulus = n.ToByteArray();
 
             Console.WriteLine("\n==================MENU==================");
             MenuMainOptions();
@@ -1787,7 +2243,78 @@ namespace PNG_WindowAPP
                         b =fft.AbsToBitmap(comp, corrected_width, corrected_height);
                         b.Save(filenameOUT);
                         break;
+                    case "7":
+                        //List<Key> key = new List<Key>();
+                        //key = RSA_key();
+                        Console.WriteLine("Public key:  (" + keys[0].left + ", " + keys[0].right + ")");
+                        Console.WriteLine("Private key: (" + keys[1].left + ", " + keys[1].right + ")");
 
+
+                        //PNG png = Encrypt(wczytany, e, n,d);
+                        //PNG png = RSAEncrypt(wczytany, RSA.ExportParameters(false), true);
+                        int ind = 0;
+                        for(int i = 0; i < wczytany.zawartosc.Count; i++)
+                        {
+                            string type = (BitConverter.ToString(wczytany.zawartosc[i].type));
+                            if(type == Constans.IDAT)
+                            {
+                                ind = i;
+                            }
+                        }
+                       
+                        PNG png = RSAEncryptAll(wczytany, RSA.ExportParameters(false));
+                        //PNG png = wczytany;
+                        int _len = png.headline.Length;
+                        int _pos_length = 8;
+                        byte[] _tmp = new byte[_len];
+                        
+                        Array.Copy(png.headline, 0, _tmp, 0, 8);
+                        for (int k = 0; k < png.zawartosc.Count; k++)
+                        {
+                                _len = _len + png.zawartosc[k].length.Length + png.zawartosc[k].type.Length + png.zawartosc[k].data.Length + png.zawartosc[k].crc.Length;
+                                Array.Resize(ref _tmp, _len);
+                                Array.Copy(png.zawartosc[k].length, 0, _tmp, 0 + _pos_length, png.zawartosc[k].length.Length);
+                                Array.Copy(png.zawartosc[k].type, 0, _tmp, 4 + _pos_length, png.zawartosc[k].type.Length);
+                                Array.Copy(png.zawartosc[k].data, 0, _tmp, 8 + _pos_length, png.zawartosc[k].data.Length);
+                                Array.Copy(png.zawartosc[k].crc, 0, _tmp, 8 + _pos_length + png.zawartosc[k].data.Length, png.zawartosc[k].crc.Length);
+                                _pos_length = _pos_length + 12 + png.zawartosc[k].data.Length;
+                                File.WriteAllBytes(filenameOUT, _tmp);
+                            
+
+                        }
+                        
+                       
+                        
+                        break;
+                    case "8":
+                        byte[] _plik = File.ReadAllBytes(filenameOUT);
+                        PNG _wczytany = Loader(_plik);
+                        _wczytany = Joint(_wczytany);
+                        //PNG encrypt = Decryption(_wczytany, d, n);
+
+                        PNG encrypt = RSADecryptAll(_wczytany, RSA.ExportParameters(false));
+                        int _len_ = encrypt.headline.Length;
+                        int _pos_length_ = 8;
+                        byte[] _tmp_ = new byte[_len_];
+
+                        Array.Copy(encrypt.headline, 0, _tmp_, 0, 8);
+                        for (int k = 0; k < encrypt.zawartosc.Count; k++)
+                        {
+
+                            _len_ = _len_ + encrypt.zawartosc[k].length.Length + encrypt.zawartosc[k].type.Length + encrypt.zawartosc[k].data.Length + encrypt.zawartosc[k].crc.Length;
+                            Array.Resize(ref _tmp_, _len_);
+                            Array.Copy(encrypt.zawartosc[k].length, 0, _tmp_, 0 + _pos_length_, encrypt.zawartosc[k].length.Length);
+                            Array.Copy(encrypt.zawartosc[k].type, 0, _tmp_, 4 + _pos_length_, encrypt.zawartosc[k].type.Length);
+                            Array.Copy(encrypt.zawartosc[k].data, 0, _tmp_, 8 + _pos_length_, encrypt.zawartosc[k].data.Length);
+                            Array.Copy(encrypt.zawartosc[k].crc, 0, _tmp_, 8 + _pos_length_ + encrypt.zawartosc[k].data.Length, encrypt.zawartosc[k].crc.Length);
+                            _pos_length_ = _pos_length_ + 12 + encrypt.zawartosc[k].data.Length;
+                            File.WriteAllBytes("o.png", _tmp_);
+
+
+                        }
+
+
+                        break;
                     /******************************************************************************************************************************************/
                     /*                                                      WYJŚCIE Z PROGRAMU                                                                */
                     /******************************************************************************************************************************************/
